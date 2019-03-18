@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, request, render_template
+from flask import Flask, redirect, url_for, request, render_template,jsonify
 from werkzeug.utils import secure_filename
 
 from keras.models import load_model
@@ -10,6 +10,10 @@ import os
 import glob
 import re
 import pickle
+import os
+
+
+import base64
 
 
 app = Flask(__name__)
@@ -28,6 +32,7 @@ label_dictionary.close()
 
 print('Model loaded. Start serving...')
 
+#prepro
 def model_predict(img_path, model):
     img = image.load_img(img_path, target_size=(299, 299))
     x=np.array(img)
@@ -67,6 +72,25 @@ def upload():
         return result
 
     return None
+
+#this route is used 
+@app.route('/pre')
+def android_predict():
+    img_encode = request.args['img_encode']
+
+
+    file_path = "uploads//predictimage.jpg"
+
+    with open(file_path,"wb") as fh:
+        fh.write(base64.urlsafe_b64decode(img_encode))
+
+    #calling the model prediction function
+    preds = model_predict(file_path, model)
+    label_prediction = [labels[k] for k in preds]
+    result = str(label_prediction)
+
+    return jsonify({"prediction":result})
+
 
 
 
