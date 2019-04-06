@@ -11,6 +11,7 @@ import glob
 import re
 import pickle
 import os
+import json
 
 
 import base64
@@ -30,6 +31,11 @@ label_dictionary = open("dictionary/dict.pickle","rb")
 labels = pickle.load(label_dictionary)
 label_dictionary.close()
 
+#load the database
+database = "database/calorie.json"
+data = json.loads(open(database).read())
+
+
 print('Model loaded. Start serving...')
 
 #prepro
@@ -39,6 +45,16 @@ def model_predict(img_path, model):
     x=np.reshape(x,(1,299,299,3))
     preds = model.predict_classes(x)
     return preds
+
+
+def caloriefun(name):
+    print("search :"+name)
+    print(data)
+    for i in data:
+        if i == name:
+            print(data[i])
+            result=data[i]
+    return result
 
 
 @app.route('/', methods=['GET'])
@@ -67,13 +83,14 @@ def upload():
         #result = str(pred_class[0][0][1])
 
         label_prediction = [labels[k] for k in preds]
+
         result = str(label_prediction)
 
         return result
 
     return None
 
-#this route is used 
+#this route is used for prediction from an android device
 @app.route('/pre')
 def android_predict():
     img_encode = request.args['img_encode']
@@ -89,7 +106,21 @@ def android_predict():
     label_prediction = [labels[k] for k in preds]
     result = str(label_prediction)
 
-    return jsonify({"prediction":result})
+    #replace double quotes
+    print(result)
+    new_result1=result.replace("]","")
+
+    new_result2=new_result1.replace("[","")
+
+    newresult3=new_result2.replace("'","")
+    print(newresult3)
+
+
+
+    calorie=caloriefun(newresult3)
+
+
+    return jsonify({"prediction":result,"calorie":calorie})
 
 
 
